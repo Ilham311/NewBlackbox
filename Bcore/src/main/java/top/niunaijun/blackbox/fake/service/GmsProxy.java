@@ -171,13 +171,6 @@ public class GmsProxy extends BinderInvocationStub {
 
     
     private static Object createMockAuthResult() {
-        try {
-            
-            Class<?> bundleClass = Class.forName("android.os.Bundle");
-            return bundleClass.newInstance();
-        } catch (Exception e) {
-            Slog.w(TAG, "Failed to create mock auth result", e);
-            return null;
-        }
+        return new android.os.Bundle();
     }
 }

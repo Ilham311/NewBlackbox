@@ -57,9 +57,9 @@ public class WebViewProxy extends ClassInvocationStub {
 
                 if (context != null) {
                     
-                    String packageName = context.getPackageName();
+                    String packageName = BActivityThread.getAppPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + packageName;
 
                     
                     File dataDir = new File(uniqueDataDir);
@@ -197,9 +197,9 @@ public class WebViewProxy extends ClassInvocationStub {
                     
                     
                     Context context = BlackBoxCore.getContext();
-                    String packageName = context != null ? context.getPackageName() : "unknown";
+                    String packageName = BActivityThread.getAppPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueSuffix = suffix + "_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueSuffix = suffix + "_" + userId + "_" + packageName;
                     args[0] = uniqueSuffix;
                     Slog.d(TAG, "WebView: Using unique suffix: " + uniqueSuffix);
                 }
@@ -223,9 +223,9 @@ public class WebViewProxy extends ClassInvocationStub {
                 
                 Context context = BlackBoxCore.getContext();
                 if (context != null) {
-                    String packageName = context.getPackageName();
+                    String packageName = BActivityThread.getAppPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + packageName;
                     
                     
                     File dir = new File(uniqueDir);
@@ -258,9 +258,9 @@ public class WebViewProxy extends ClassInvocationStub {
                 Context context = BlackBoxCore.getContext();
                 if (context != null) {
                     
-                    String packageName = context.getPackageName();
+                    String packageName = BActivityThread.getAppPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDbPath = context.getApplicationInfo().dataDir + "/webview_db_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueDbPath = context.getApplicationInfo().dataDir + "/webview_db_" + userId + "_" + packageName;
                     
                     
                     System.setProperty("webview.database.path", uniqueDbPath);
