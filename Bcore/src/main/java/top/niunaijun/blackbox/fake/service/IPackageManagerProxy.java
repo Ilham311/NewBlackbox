@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import android.content.pm.Signature;
 import black.android.app.BRActivityThread;
 import black.android.app.BRContextImpl;
 import black.android.app.ContextImpl;
@@ -133,7 +134,6 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             String packageName = (String) args[0];
             int flags = MethodParameterUtils.toInt(args[1]);
             
-            
             if ("com.android.vending".equals(packageName)) {
                 return createFakeGooglePlayServicesPackageInfo();
             }
@@ -152,6 +152,25 @@ public class IPackageManagerProxy extends BinderInvocationStub {
                         }
                     }
                 }
+
+                // Phase 1: Implement Signature Spoofing to bypass GMS Auth Checks
+                if ((flags & PackageManager.GET_SIGNATURES) != 0 ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0)) {
+                    try {
+                        PackageInfo hostInfo = BlackBoxCore.getPackageManager().getPackageInfo(packageName, flags);
+                        if (hostInfo != null) {
+                            if ((flags & PackageManager.GET_SIGNATURES) != 0) {
+                                packageInfo.signatures = hostInfo.signatures;
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0) {
+                                packageInfo.signingInfo = hostInfo.signingInfo;
+                            }
+                        }
+                    } catch (PackageManager.NameNotFoundException e) {
+                        Slog.w(TAG, "Signature spoofing failed: Host package info not found for " + packageName);
+                    }
+                }
+
                 return packageInfo;
             }
             if (AppSystemEnv.isOpenPackage(packageName)) {
