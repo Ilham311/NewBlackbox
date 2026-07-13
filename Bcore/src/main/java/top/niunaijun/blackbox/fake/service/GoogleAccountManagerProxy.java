@@ -81,23 +81,19 @@ public class GoogleAccountManagerProxy extends ClassInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             try {
                 Slog.d(TAG, "GoogleAccountManager: Handling getAccountsByType call");
-                
-                if (args != null && args.length > 0) {
-                    String accountType = (String) args[0];
-                    Slog.d(TAG, "GoogleAccountManager: Requesting accounts of type: " + accountType);
-                    
-                    
-                    if ("com.google".equals(accountType)) {
-                        Slog.d(TAG, "GoogleAccountManager: Returning mock Google accounts");
-                        return createMockGoogleAccounts();
+                if (args != null && args.length > 0 && "com.google".equals(args[0])) {
+                    // Forward directly to host OS to fetch real Google accounts
+                    Context hostContext = BlackBoxCore.getContext();
+                    if (hostContext != null) {
+                        AccountManager am = AccountManager.get(hostContext);
+                        Account[] hostAccounts = am.getAccountsByType("com.google");
+                        Slog.d(TAG, "GoogleAccountManager: Returning " + hostAccounts.length + " REAL Google accounts from host");
+                        return hostAccounts;
                     }
                 }
-                
-                
                 return method.invoke(who, args);
-                
             } catch (Exception e) {
-                Slog.w(TAG, "GoogleAccountManager: GetAccountsByType error, returning mock accounts", e);
+                Slog.w(TAG, "GoogleAccountManager: GetAccountsByType error, falling back", e);
                 return createMockGoogleAccounts();
             }
         }
@@ -182,11 +178,13 @@ public class GoogleAccountManagerProxy extends ClassInvocationStub {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             try {
-                Slog.d(TAG, "GoogleAccountManager: Handling getAuthToken call");
+                Slog.d(TAG, "GoogleAccountManager: Forwarding getAuthToken to host");
                 return method.invoke(who, args);
             } catch (Exception e) {
-                Slog.w(TAG, "GoogleAccountManager: GetAuthToken error, returning mock token", e);
-                return "mock_google_auth_token_" + System.currentTimeMillis();
+                Slog.w(TAG, "GoogleAccountManager: GetAuthToken error", e);
+                // Don't return mock strings, return an actual Bundle with an intent if needed,
+                // or let it fail gracefully so the app triggers the host's authentication UI.
+                return null;
             }
         }
     }

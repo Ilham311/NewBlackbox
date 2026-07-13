@@ -52,37 +52,18 @@ public class WorkManagerProxy extends ClassInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             try {
                 Slog.d(TAG, "WorkManager: enqueue() called");
-                
-                
-                if (args != null) {
-                    for (int i = 0; i < args.length; i++) {
-                        if (args[i] != null) {
-                            Slog.d(TAG, "WorkManager: args[" + i + "] = " + args[i].getClass().getSimpleName() + ": " + args[i]);
-                        }
-                    }
-                }
-                
-                
+                // In Phase 3: We allow enqueueing to proceed, but if it throws due to UID/Component mismatch,
+                // we gracefully fall back instead of breaking the app.
                 return method.invoke(who, args);
-                
             } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: enqueue() failed, returning mock result", e);
-                
-                
+                Slog.w(TAG, "WorkManager: enqueue() failed, suppressing to prevent crash", e);
                 return createMockWorkResult();
             }
         }
         
         private Object createMockWorkResult() {
-            try {
-                
-                Class<?> workResultClass = Class.forName("androidx.work.Operation");
-                
-                return null; 
-            } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: Failed to create mock result", e);
-                return null;
-            }
+            // Provide a bare minimum mock or null to prevent unhandled exceptions downstream.
+            return null;
         }
     }
 
@@ -92,33 +73,12 @@ public class WorkManagerProxy extends ClassInvocationStub {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             try {
-                Slog.d(TAG, "WorkManager: enqueueUniqueWork() called");
-                
-                
                 if (args != null && args.length > 0) {
-                    String workName = (String) args[0];
-                    Slog.d(TAG, "WorkManager: Unique work name: " + workName);
+                    Slog.d(TAG, "WorkManager: enqueueUniqueWork() called for " + args[0]);
                 }
-                
-                
                 return method.invoke(who, args);
-                
             } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: enqueueUniqueWork() failed, returning mock result", e);
-                
-                
-                return createMockWorkResult();
-            }
-        }
-        
-        private Object createMockWorkResult() {
-            try {
-                
-                Class<?> workResultClass = Class.forName("androidx.work.Operation");
-                
-                return null; 
-            } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: Failed to create mock result", e);
+                Slog.w(TAG, "WorkManager: enqueueUniqueWork() failed, suppressing to prevent crash", e);
                 return null;
             }
         }
@@ -130,33 +90,12 @@ public class WorkManagerProxy extends ClassInvocationStub {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             try {
-                Slog.d(TAG, "WorkManager: enqueueUniquePeriodicWork() called");
-                
-                
                 if (args != null && args.length > 0) {
-                    String workName = (String) args[0];
-                    Slog.d(TAG, "WorkManager: Periodic work name: " + workName);
+                    Slog.d(TAG, "WorkManager: enqueueUniquePeriodicWork() called for " + args[0]);
                 }
-                
-                
                 return method.invoke(who, args);
-                
             } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: enqueueUniquePeriodicWork() failed, returning mock result", e);
-                
-                
-                return createMockWorkResult();
-            }
-        }
-        
-        private Object createMockWorkResult() {
-            try {
-                
-                Class<?> workResultClass = Class.forName("androidx.work.Operation");
-                
-                return null; 
-            } catch (Exception e) {
-                Slog.w(TAG, "WorkManager: Failed to create mock result", e);
+                Slog.w(TAG, "WorkManager: enqueueUniquePeriodicWork() failed, suppressing to prevent crash", e);
                 return null;
             }
         }

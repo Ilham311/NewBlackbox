@@ -157,13 +157,17 @@ public class IPackageManagerProxy extends BinderInvocationStub {
                 if ((flags & PackageManager.GET_SIGNATURES) != 0 ||
                     (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0)) {
                     try {
-                        PackageInfo hostInfo = BlackBoxCore.getPackageManager().getPackageInfo(packageName, flags);
-                        if (hostInfo != null) {
-                            if ((flags & PackageManager.GET_SIGNATURES) != 0) {
-                                packageInfo.signatures = hostInfo.signatures;
-                            }
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0) {
-                                packageInfo.signingInfo = hostInfo.signingInfo;
+                        // Use host context's package manager to bypass the BlackBox proxy layer and prevent infinite recursion
+                        android.content.Context hostContext = BlackBoxCore.getContext();
+                        if (hostContext != null) {
+                            PackageInfo hostInfo = hostContext.getPackageManager().getPackageInfo(packageName, flags);
+                            if (hostInfo != null) {
+                                if ((flags & PackageManager.GET_SIGNATURES) != 0) {
+                                    packageInfo.signatures = hostInfo.signatures;
+                                }
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0) {
+                                    packageInfo.signingInfo = hostInfo.signingInfo;
+                                }
                             }
                         }
                     } catch (PackageManager.NameNotFoundException e) {

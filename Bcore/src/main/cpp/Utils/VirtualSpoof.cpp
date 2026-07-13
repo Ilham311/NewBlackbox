@@ -3,6 +3,8 @@
 #include "./xdl.h"
 #include <android/log.h>
 #include <dlfcn.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include "Dobby/dobby.h"
 
 
@@ -38,7 +40,24 @@ SpoofedProp spoofed_props[] = {
 
 
 static int (*orig_system_property_get)(const char *name, char *value) = nullptr;
+static uid_t (*orig_getuid)() = nullptr;
 
+
+uid_t my_getuid() {
+    // Phase 2: Native Syscall Spoofing.
+    // Instead of returning the UID assigned to the BlackBox process by the OS,
+    // we could dynamically return a spoofed UID based on the current virtual process.
+    // For now, we fall back to the original to prevent crashes, but intercept the call.
+    // Use syscall(__NR_getuid32) or __NR_getuid to safely avoid an infinite loop
+    // if Dobby fails and orig_getuid is somehow null while inside the hook.
+#if defined(__aarch64__) || defined(__x86_64__)
+    uid_t real_uid = orig_getuid ? orig_getuid() : syscall(__NR_getuid);
+#else
+    uid_t real_uid = orig_getuid ? orig_getuid() : syscall(__NR_getuid32);
+#endif
+    // Example spoof: if virtual app expects UID 10050, we would return 10050 here.
+    return real_uid;
+}
 
 int my_system_property_get(const char *name, char *value) {
     for (int i = 0; spoofed_props[i].key != nullptr; ++i) {
@@ -57,18 +76,28 @@ int my_system_property_get(const char *name, char *value) {
 
 void install_property_get_hook() {
     void* handle = xdl_open("libc.so", XDL_DEFAULT);
-    void* target = xdl_dsym(handle, "__system_property_get", nullptr);
-    if (target) {
-        if (DobbyHook(target, (void*)my_system_property_get, (void**)&orig_system_property_get) == 0) {
-            LOGD("Spoof installed successfully");
+    if (!handle) return;
+
+    void* target_prop = xdl_dsym(handle, "__system_property_get", nullptr);
+    if (target_prop) {
+        if (DobbyHook(target_prop, (void*)my_system_property_get, (void**)&orig_system_property_get) == 0) {
+            LOGD("Property Spoof installed successfully");
         } else {
-            LOGD("Spoof hook failed");
+            LOGD("Property Spoof hook failed");
         }
-        xdl_close(handle);
-    } else{
-        xdl_close(handle);
     }
 
+    // Phase 2: Hook getuid to evade native UID detection
+    void* target_getuid = xdl_dsym(handle, "getuid", nullptr);
+    if (target_getuid) {
+        if (DobbyHook(target_getuid, (void*)my_getuid, (void**)&orig_getuid) == 0) {
+            LOGD("getuid Spoof installed successfully");
+        } else {
+            LOGD("getuid Spoof hook failed");
+        }
+    }
+
+    xdl_close(handle);
 }
 
 
