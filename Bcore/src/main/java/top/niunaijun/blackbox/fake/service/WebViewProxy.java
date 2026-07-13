@@ -44,51 +44,57 @@ public class WebViewProxy extends ClassInvocationStub {
     
     @ProxyMethod("<init>")
     public static class Constructor extends MethodHook {
+
+        private static boolean sIsDataDirectorySet = false;
+
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             Slog.d(TAG, "WebView: Constructor called, intercepting to prevent data directory conflicts");
             Context context = null;
-            try {
-                if (args != null && args.length > 0 && args[0] instanceof Context) {
-                    context = (Context) args[0];
-                } else {
-                    context = BlackBoxCore.getContext();
+            if (args != null && args.length > 0 && args[0] instanceof Context) {
+                context = (Context) args[0];
+            } else {
+                context = BlackBoxCore.getContext();
+            }
+
+            if (context != null && !sIsDataDirectorySet) {
+                String uniqueSuffix = "webview_" + BActivityThread.getUserId() + "_" + android.os.Process.myPid();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    try {
+                        android.webkit.WebView.setDataDirectorySuffix(uniqueSuffix);
+                        sIsDataDirectorySet = true;
+                        Slog.d(TAG, "WebView: Set data directory suffix using official API: " + uniqueSuffix);
+                    } catch (Exception e) {
+                        Slog.w(TAG, "Failed to use official setDataDirectorySuffix, falling back to System.setProperty");
+                    }
                 }
 
-                if (context != null) {
-                    
-                    String packageName = context.getPackageName();
-                    String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + android.os.Process.myPid();
-
-                    
+                if (!sIsDataDirectorySet) {
+                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/app_" + uniqueSuffix;
                     File dataDir = new File(uniqueDataDir);
                     if (!dataDir.exists()) {
                         dataDir.mkdirs();
-                        Slog.d(TAG, "WebView: Created unique data directory: " + uniqueDataDir);
                     }
-
-                    
-                    System.setProperty("webview.data.dir", uniqueDataDir);
-                    System.setProperty("webview.cache.dir", uniqueDataDir + "/cache");
-                    System.setProperty("webview.cookies.dir", uniqueDataDir + "/cookies");
-
-                    Slog.d(TAG, "WebView: Set custom data directory: " + uniqueDataDir);
+                    if (dataDir.exists()) {
+                        System.setProperty("webview.data.dir", uniqueDataDir);
+                        System.setProperty("webview.cache.dir", uniqueDataDir + "/cache");
+                        System.setProperty("webview.cookies.dir", uniqueDataDir + "/cookies");
+                        sIsDataDirectorySet = true;
+                        Slog.d(TAG, "WebView: Set custom data directory using properties: " + uniqueDataDir);
+                    }
                 }
+            }
 
-                
+            try {
                 Object result = method.invoke(who, args);
 
                 if (result instanceof WebView) {
-                    WebView webView = (WebView) result;
-                    
-                    configureWebView(webView);
+                    configureWebView((WebView) result);
                 }
 
                 return result;
             } catch (Exception e) {
                 Slog.w(TAG, "WebView: Constructor failed, attempting fallback", e);
-                
                 return createFallbackWebView(context);
             }
         }
@@ -97,63 +103,35 @@ public class WebViewProxy extends ClassInvocationStub {
             try {
                 WebSettings settings = webView.getSettings();
                 if (settings != null) {
-                    
                     settings.setJavaScriptEnabled(true);
-                    
                     settings.setDomStorageEnabled(true);
-                    
                     settings.setDatabaseEnabled(true);
-                    
                     settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-                    
-                    try {
-                        
-                        Method setAppCacheEnabled = settings.getClass().getMethod("setAppCacheEnabled", boolean.class);
-                        setAppCacheEnabled.invoke(settings, true);
-
-                        if (webView.getContext() != null) {
-                            Method setAppCachePath = settings.getClass().getMethod("setAppCachePath", String.class);
-                            setAppCachePath.invoke(settings, webView.getContext().getCacheDir().getAbsolutePath());
-                        }
-                    } catch (Throwable e) {
-                        
-                        Slog.w(TAG, "WebView: AppCache not supported: " + e.getMessage());
-                    }
-
-                    
                     settings.setBlockNetworkLoads(false);
                     settings.setBlockNetworkImage(false);
 
-                    
                     settings.setAllowFileAccess(true);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         settings.setAllowFileAccessFromFileURLs(true);
                         settings.setAllowUniversalAccessFromFileURLs(true);
                     }
 
-                    
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                     }
 
-                    
                     String userAgent = settings.getUserAgentString();
                     if (userAgent != null && !userAgent.contains("BlackBox")) {
                         settings.setUserAgentString(userAgent + " BlackBox");
                     }
 
-                    
                     try {
                         webView.setNetworkAvailable(true);
-                    } catch (Exception e) {
-                        
-                    }
+                    } catch (Exception e) {}
 
-                    
                     settings.setAllowContentAccess(true);
 
-                    
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                          settings.setSafeBrowsingEnabled(false);
                     }
@@ -168,8 +146,8 @@ public class WebViewProxy extends ClassInvocationStub {
         private WebView createFallbackWebView(Context context) {
             try {
                 if (context != null) {
-                    
-                    WebView webView = new WebView(context);
+                    // Use Application Context to prevent Massive Context Leak
+                    WebView webView = new WebView(context.getApplicationContext());
                     WebSettings settings = webView.getSettings();
                     if (settings != null) {
                         settings.setJavaScriptEnabled(true);

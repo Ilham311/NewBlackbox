@@ -16,6 +16,16 @@ import top.niunaijun.blackbox.utils.Slog;
 public class GmsProxy extends BinderInvocationStub {
     public static final String TAG = "GmsProxy";
 
+    private static Method sAsInterfaceMethod;
+    static {
+        try {
+            Class<?> stubClass = Class.forName("com.google.android.gms.common.api.internal.IGmsServiceBroker$Stub");
+            sAsInterfaceMethod = stubClass.getMethod("asInterface", IBinder.class);
+        } catch (Exception e) {
+            Slog.e(TAG, "Failed to cache IGmsServiceBroker.asInterface method", e);
+        }
+    }
+
     public GmsProxy() {
         super(BRServiceManager.get().getService("gms"));
     }
@@ -23,16 +33,14 @@ public class GmsProxy extends BinderInvocationStub {
     @Override
     protected Object getWho() {
         IBinder binder = BRServiceManager.get().getService("gms");
-        if (binder == null) {
-            Slog.e(TAG, "Failed to get gms service binder");
+        if (binder == null || sAsInterfaceMethod == null) {
+            if (binder == null) Slog.e(TAG, "Failed to get gms service binder");
             return null;
         }
         try {
-            Class<?> stubClass = Class.forName("com.google.android.gms.common.api.internal.IGmsServiceBroker$Stub");
-            Method asInterfaceMethod = stubClass.getMethod("asInterface", IBinder.class);
-            Object iface = asInterfaceMethod.invoke(null, binder);
+            Object iface = sAsInterfaceMethod.invoke(null, binder);
             if (iface != null) {
-                Slog.d(TAG, "Successfully obtained IGmsServiceBroker interface");
+                Slog.d(TAG, "Successfully obtained IGmsServiceBroker interface using cached reflection");
                 return iface;
             } else {
                 Slog.e(TAG, "Reflection succeeded but returned null interface");
@@ -171,13 +179,6 @@ public class GmsProxy extends BinderInvocationStub {
 
     
     private static Object createMockAuthResult() {
-        try {
-            
-            Class<?> bundleClass = Class.forName("android.os.Bundle");
-            return bundleClass.newInstance();
-        } catch (Exception e) {
-            Slog.w(TAG, "Failed to create mock auth result", e);
-            return null;
-        }
+        return new android.os.Bundle();
     }
 }
