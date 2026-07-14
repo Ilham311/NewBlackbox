@@ -46,7 +46,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -61,7 +61,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -76,7 +76,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -91,7 +91,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -106,7 +106,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -121,7 +121,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -136,7 +136,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -151,7 +151,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
@@ -166,7 +166,7 @@ public class WebViewFactoryProxy extends ClassInvocationStub {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             } catch (Exception e) {
-                throw e;
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
