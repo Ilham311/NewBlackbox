@@ -50,7 +50,7 @@ public class WebViewProxy extends ClassInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             if (!sDirectorySuffixSet && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 try {
-                    String processSuffix = BActivityThread.getUserId() + "_" + android.os.Process.myPid();
+                    String processSuffix = BActivityThread.getUserId() + "_" + BActivityThread.getAppProcessName();
                     android.webkit.WebView.setDataDirectorySuffix(processSuffix);
                     sDirectorySuffixSet = true;
                 } catch (Exception e) {
@@ -81,7 +81,7 @@ public class WebViewProxy extends ClassInvocationStub {
                     Context context = BlackBoxCore.getContext();
                     String packageName = context != null ? context.getPackageName() : "unknown";
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueSuffix = suffix + "_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueSuffix = suffix + "_" + userId + "_" + BActivityThread.getAppProcessName();
                     args[0] = uniqueSuffix;
                     Slog.d(TAG, "WebView: Using unique suffix: " + uniqueSuffix);
                 }
@@ -107,7 +107,7 @@ public class WebViewProxy extends ClassInvocationStub {
                 if (context != null) {
                     String packageName = context.getPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + BActivityThread.getAppProcessName();
                     
                     
                     File dir = new File(uniqueDir);
@@ -142,7 +142,7 @@ public class WebViewProxy extends ClassInvocationStub {
                     
                     String packageName = context.getPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDbPath = context.getApplicationInfo().dataDir + "/webview_db_" + userId + "_" + android.os.Process.myPid();
+                    String uniqueDbPath = context.getApplicationInfo().dataDir + "/webview_db_" + userId + "_" + BActivityThread.getAppProcessName();
                     
                     
                     System.setProperty("webview.database.path", uniqueDbPath);
