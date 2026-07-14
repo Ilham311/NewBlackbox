@@ -389,14 +389,14 @@ public class BActivityThread extends IBActivityThread.Stub {
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WebView.setDataDirectorySuffix(getUserId() + ":" + packageName + ":" + processName);
+            WebView.setDataDirectorySuffix(getUserId() + "_" + packageName.replace(".", "_") + "_" + processName.replace(":", "_"));
         }
 
         VirtualRuntime.setupRuntime(processName, applicationInfo);
 
-        // Fase 2: Implement Build.prop spoofing per app
+        // Spoof Build.prop per user profile to avoid fingerprint collisions
         try {
-            top.niunaijun.blackbox.fake.hook.BuildProxy.spoofBuild(packageName);
+            top.niunaijun.blackbox.fake.hook.BuildProxy.spoofBuild(getUserId());
         } catch (Throwable e) {
             e.printStackTrace();
         }
