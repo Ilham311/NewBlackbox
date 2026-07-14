@@ -1,0 +1,55 @@
+name: Build tes
+
+on:
+  push:
+    branches:
+      - '**' # Mengaktifkan workflow di semua branch
+  workflow_dispatch:
+
+jobs:
+  build-and-send:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Send ALL Release APKs to Telegram and Pin
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          for APK in ./app/build/outputs/apk/release/*.apk; do
+            RESPONSE=$(curl -s -F document=@"$APK" \
+                 -F chat_id="$TELEGRAM_CHAT_ID" \
+                 -F caption="[Branch: ${GITHUB_REF_NAME}] [RELEASE] $(basename $APK) $COMMIT_MSG" \
+                 https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument)
+            MESSAGE_ID=$(echo $RESPONSE | jq '.result.message_id')
+            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/pinChatMessage" \
+              -d chat_id="$TELEGRAM_CHAT_ID" \
+              -d message_id="$MESSAGE_ID"
+          done
