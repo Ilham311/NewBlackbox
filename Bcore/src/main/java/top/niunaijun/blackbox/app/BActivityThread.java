@@ -389,7 +389,18 @@ public class BActivityThread extends IBActivityThread.Stub {
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WebView.setDataDirectorySuffix(getUserId() + ":" + packageName + ":" + processName);
+            if (processName != null && !processName.equals(packageName)) {
+                String processSuffix = processName;
+                if (processName.startsWith(packageName + ":")) {
+                    processSuffix = processName.substring(packageName.length() + 1);
+                } else if (processName.startsWith(packageName)) {
+                    processSuffix = processName.substring(packageName.length());
+                }
+                String safeProcessSuffix = processSuffix.replace(":", "_");
+                WebView.setDataDirectorySuffix(getUserId() + "_" + safeProcessSuffix);
+            } else {
+                WebView.setDataDirectorySuffix(String.valueOf(getUserId()));
+            }
         }
 
         VirtualRuntime.setupRuntime(processName, applicationInfo);
@@ -426,9 +437,13 @@ public class BActivityThread extends IBActivityThread.Stub {
         mBoundApplication = bindData;
 
         
-        if (BRNetworkSecurityConfigProvider.getRealClass() != null) {
+        try {
+            if (BRNetworkSecurityConfigProvider.getRealClass() != null) {
             Security.removeProvider("AndroidNSSP");
             BRNetworkSecurityConfigProvider.get().install(packageContext);
+            }
+        } catch (Throwable e) {
+            Slog.w(TAG, "Failed to install NetworkSecurityConfig", e);
         }
         Application application;
         try {
