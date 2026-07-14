@@ -46,9 +46,7 @@ import top.niunaijun.blackbox.fake.service.IWebViewUpdateServiceProxy;
 import top.niunaijun.blackbox.fake.service.IMiuiSecurityManagerProxy;
 import top.niunaijun.blackbox.fake.service.SystemLibraryProxy;
 import top.niunaijun.blackbox.fake.service.ReLinkerProxy;
-import top.niunaijun.blackbox.fake.service.WebViewProxy;
 import top.niunaijun.blackbox.fake.service.WebViewFactoryProxy;
-import top.niunaijun.blackbox.fake.service.MediaRecorderProxy;
 import top.niunaijun.blackbox.fake.service.AudioRecordProxy;
 import top.niunaijun.blackbox.fake.service.MediaRecorderClassProxy;
 import top.niunaijun.blackbox.fake.service.SQLiteDatabaseProxy;
@@ -127,11 +125,8 @@ public class HookManager {
             addInjector(new ContentResolverProxy());
             addInjector(new IWebViewUpdateServiceProxy());
             addInjector(new SystemLibraryProxy());
-            addInjector(new ReLinkerProxy());
-            addInjector(new WebViewProxy());
             addInjector(new WebViewFactoryProxy());
             addInjector(new WorkManagerProxy());
-            addInjector(new MediaRecorderProxy());
             addInjector(new AudioRecordProxy());
             addInjector(new IMiuiSecurityManagerProxy());
             addInjector(new ISettingsProviderProxy());
@@ -294,7 +289,6 @@ public class HookManager {
         String[] criticalHooks = {
             "IActivityManagerProxy",
             "IPackageManagerProxy", 
-            "WebViewProxy",
             "IContentProviderProxy"
         };
         
